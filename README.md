@@ -11,3 +11,13 @@ Column2 DataType,
 );
 #### FOR EXAMPLE:
 Create a table with the name Customers, and columns CustomerID, CustomerName, Age and PhoneNumber. Auto-increment the CustomerID and make it the primary key for the table.
+
+
+
+
+
+
+
+#### Screenshot
+
+![](Screenshotjoiningdata.png)
