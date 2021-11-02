@@ -12,6 +12,23 @@ Column2 DataType,
 #### FOR EXAMPLE:
 Create a table with the name Customers, and columns CustomerID, CustomerName, Age and PhoneNumber. Auto-increment the CustomerID and make it the primary key for the table.
 
+# SUBQUERY Vs JOIN
+Both Subqueries and join are used to combine data from different tables into a single result.
+
+
+|                         SUBQUERY                                      |                       JOIN                          |                                                    
+| -------------                                                         |                   -------------                     |
+| * It can be used to return either a single value or a row             | * Joins are used to return rows                     |
+| * we can select the columns from first table only.                    | * We can select the columns from either of the table|
+| * Sometimes Works Slower than joins because of nested queries         | * In general joins work faster than sub-queries.    |   
+
+
+
+
+
+
+
+
 
 
 
