@@ -21,7 +21,7 @@ Create a table with the name Customers, and columns CustomerID, CustomerName, Ag
 | * Sometimes Works Slower than joins because of nested queries         | * In general joins work faster than sub-queries.    |   
 
 
-Both Subqueries and join are used to combine data from different tables into a single result. I would say, rather than going by theory, execution plan to see the performance of each option, and then make a decision.
+Both Subqueries and join are used to combine data from different tables into a single result. They share many similarities and differences. I would say, rather than going by theory, execution plan to see the performance of each option, and then make a decision.
 
 
 
