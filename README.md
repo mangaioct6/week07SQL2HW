@@ -21,7 +21,7 @@ Create a table with the name Customers, and columns CustomerID, CustomerName, Ag
 | * Sometimes Works Slower than joins because of nested queries         | * In general joins work faster than sub-queries.    |   
 
 
-  JOINS are used to retrieve data from multiple tables.JOIN is performed whenever two or more tables are listed in a SQL statement.An SQL subquery is a query inside another query. Subqueries, also known as nested queries.The main SQL query uses the result of the subquery.
+  JOINS are used to retrieve data from multiple tables. JOIN is performed whenever two or more tables are listed in a SQL statement. An SQL subquery is a query inside another query. Subqueries, also known as nested queries. The main SQL query uses the result of the subquery.
 
    Both Subqueries and join are used to combine data from different tables into a single result. They share many similarities and differences. I would say, rather than going by theory, execution plan to see the performance of each option, and then make a decision.
 
