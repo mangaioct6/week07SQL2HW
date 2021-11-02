@@ -1,0 +1,192 @@
+--1. Create a new column called “status” in the rental table that uses a case statement to indicate if a film was returned late, early, or on time.
+
+--To add new column in a table, we have to use alter table keyword, following add column with column name and data types of the column.
+alter table rental 
+
+--column name is status and data type of status is character varying
+add column status character varying;
+
+/* To calculate which films are returned late,on time, early we have to find the difference between return_date and rental_date, and then
+compare it with rental_duration. If both are equals, than dvds returned on time. If rental_duration is greater than the difference, then 
+returned early. If rental_duration is less than the difference then it returned late. We cannot find the difference between two dates, 
+since it is with timestamp. I have used the date_part syntax and compared with 'day'. Tables I used here are rental-->inventory-->film
+Joined the tables using common columns.*/
+
+update rental as r
+set status = case when rental_duration > date_part('day',r.return_date -r.rental_date) then 'Late' 
+	 	  		  when rental_duration = date_part('day',r.return_date -r.rental_date) then 'On Time' 
+		 		  else 'Early' END 
+from inventory as i
+join film as f
+on f.film_id=i.film_id
+where r.inventory_id=i.inventory_id;
+
+                         
+-- I can check using select * from rental to see my new column and it is updated with calculated values. 
+select * from rental;
+
+--- 2. Show the total payment amounts for people who live in Kansas City or Saint Louis. 
+
+/* To connect city and amount, I have joined city and address table using city_id, address and customer table using address_id,
+finally customer and payment table using customer_id. Calculated the sum of amount and named as total_amount. Filtered the city names 
+in where clause. */
+
+select city, sum(amount) as total_amount
+from city as ci
+join address as a
+on ci.city_id = a.city_id
+join customer as cu
+on a.address_id = cu.address_id
+join payment as p
+on cu.customer_id = p.customer_id
+where city in ('Kansas City', 'Saint Louis')
+group by city;
+
+--- 3. How many films are in each category? Why do you think there is a table for category and a table for film category?
+
+/* I began write the query with name from category table as category_name and count of film_id named as film_count. I have joined category 
+and film_category tables using category_id, film_category and film tables using film_id. I have grouped by category_name. */
+
+/* Category table has category name and its correspoding category id.It stores film’s categories data. So every time instead of mentioning category names, we can just use the ids. 
+Film category has film_id, category_id. It stores the relationships between films and categories. One film may come under two or many categories .For example, An animation movie 
+may come under children and comedy categories. So there is a separate table called film_category table, to explain what are the films and its categories*/
+
+
+select name as category_name, count(f.film_id) as film_count
+from category as c
+join film_category as fc
+on c.category_id = fc.category_id
+join film as f
+on fc.film_id = f.film_id
+group by category_name;
+
+
+--- 4. Show a roster for the staff that includes their email, address, city, and country (not ids)
+
+/* To show a list of staff's email, address, city and country, we have to join staff table with the corresponding tables (address,city,country).
+I have joined staff and address table using address_id column and i have joined address and city table using city_id column, I have joined city and country
+table using country_id. Now the query displays the details.*/
+
+select concat(first_name,'',last_name) as staff_name ,email,address,city,country
+from staff as st
+join address as ad
+on st.address_id = ad.address_id
+join city as ci
+on ad.city_id = ci.city_id
+join country as co
+on ci.country_id = co.country_id
+
+
+--- 5. Show the film_id, title, and length for the movies that were returned from May 15 to 31, 2005
+
+/* To show film_id, I have to join film and rental table. There is no common column between these two. So I have connected film and inventory table
+and then inventory and rental table. In where clause, using cast keyword I have filtered film_id, title, length for the movies that were returned from May 15 to 31, 2005. */
+
+select f.film_id,f.title,f.length
+from film as f
+join inventory as i
+on f.film_id = i.film_id
+join rental as r 
+on i.inventory_id = r.inventory_id
+where r.return_date between cast('2005-05-15' as date) and cast('2005-05-31' as date); 
+
+
+--- 6. Write a subquery to show which movies are rented below the average price for all movies. 
+
+/* I have selected title from film and filtered the conditon by writing subquery in where clause. */
+
+select title
+from film
+where rental_rate < (select avg(rental_rate)
+					 from film);
+					
+
+--- 7. Write a join statement to show which movies are rented below the average price for all movies.
+
+select f1.title
+from film as f1
+CROSS JOIN film as f2
+group by f1.title,f1.rental_rate
+having(f1.rental_rate < avg(f2.rental_rate))
+ 
+--- 8. Perform an explain plan on 6 and 7, and describe what you’re seeing and important ways they differ.
+
+/* In the subquery method, explain plan shows the cost, execution time, memory usage are lesser than the join method.
+In the cross join, because of nested loop cost of executing the query, execution time are way higher than sub query method.
+For 1000 rows, cross join has to check the results for (1000*1000) 1000000 times.This is the reason for more cost and more execution time.*/
+
+/* So for this question, subquery method is efficient,less consuming and faster.Nested loops makes cross join slower and costly
+than subquery method.*/
+
+--- Explain Plan for 6
+explain analyze select title
+from film
+where rental_rate < (select avg(rental_rate)
+					 from film);
+					 
+/* "Seq Scan on film  (cost=66.51..133.01 rows=333 width=15) (actual time=0.429..0.708 rows=341 loops=1)"
+"  Filter: (rental_rate < $0)"
+"  Rows Removed by Filter: 659"
+"  InitPlan 1 (returns $0)"
+"    ->  Aggregate  (cost=66.50..66.51 rows=1 width=32) (actual time=0.400..0.401 rows=1 loops=1)"
+"          ->  Seq Scan on film film_1  (cost=0.00..64.00 rows=1000 width=6) (actual time=0.012..0.155 rows=1000 loops=1)"
+"Planning Time: 0.208 ms"
+"Execution Time: 0.763 ms" */
+
+/*Explain Plan for 7*/
+explain analyze select f1.title
+from film as f1
+CROSS JOIN film as f2
+group by f1.title,f1.rental_rate
+having(f1.rental_rate < avg(f2.rental_rate))
+
+/*"HashAggregate  (cost=20130.50..20145.50 rows=333 width=21) (actual time=1062.314..1063.186 rows=341 loops=1)"
+"  Group Key: f1.title, f1.rental_rate"
+"  Filter: (f1.rental_rate < avg(f2.rental_rate))"
+"  Batches: 1  Memory Usage: 577kB"
+"  Rows Removed by Filter: 659"
+"  ->  Nested Loop  (cost=0.00..12630.50 rows=1000000 width=27) (actual time=0.040..286.756 rows=1000000 loops=1)"
+"        ->  Seq Scan on film f1  (cost=0.00..64.00 rows=1000 width=21) (actual time=0.019..1.846 rows=1000 loops=1)"
+"        ->  Materialize  (cost=0.00..69.00 rows=1000 width=6) (actual time=0.000..0.072 rows=1000 loops=1000)"
+"              ->  Seq Scan on film f2  (cost=0.00..64.00 rows=1000 width=6) (actual time=0.009..0.328 rows=1000 loops=1)"
+"Planning Time: 0.289 ms"
+"Execution Time: 1063.388 ms"*/
+
+--- 9. With a window function, write a query that shows the film, its duration, and what percentile the duration fits into.
+--- This may help https://mode.com/sql-tutorial/sql-window-functions/#rank-and-dense_rank 
+
+/* NTILE() function is a window function that distributes rows of an ordered partition into a pre-defined number of roughly equal groups. 
+For each row in a group, the NTILE() function assigns a bucket number representing the group to which the row belongs. Partition by in the window 
+function over()is an optional. Here ntile() allocated the films with numbers ordered by film length and partitoned by rental_duration. 
+*/
+select f.title,f.length,f.rental_duration,
+	   ntile(100) over(PARTITION BY f.rental_duration order by f.length) as percentile
+from film as f
+
+
+--- 10.In under 100 words, explain what the difference is between set-based and procedural programming. Be sure to specify which sql and python are. 
+
+/* SET BASED LANGUAGE
+
+Set based languages handling data between sets or groups. Groups of data will interact with other groups of data. SQL is “set-based language” as it processes 
+sets of the table data with other sets of the table data which meet up other criteria. SQL takes the data that meets the condition and keeps it in a temporary 
+working area. According to set theory, a set should be considered as a whole. So we will focuse the set and not on its individual elements. 
+
+PROCEDURAL PROGRAMMING LANGUAGE
+
+Procedural programming language process the data line by line. It handles data totally different from set based. Procedural programming uses a list of instructions 
+to tell the computer what to do step by step. Python is a "procedural-programming-language". Thats how it iterates into line by line with the data. 
+
+Both of the methods works efficiently but sometimes set based works more efficient and faster than procedural language.*/
+
+--- Bonus: Find the relationship that is wrong in the data model. Explain why it’s wrong. 
+
+/* The relationship between category and film_category in the data madel
+category ---- zero or one ---- film_category
+film_category --- one and only one --- category
+
+One film may come under many categories. It is not like one film should fall under one category alone. It can have minimum one category and maximum three or four.
+For example a same film can be in an animation, comedy, children categories. So the relationship between film_category and category might be one to many.
+So,
+film_category --- one to many --- category
+*/
